@@ -23,21 +23,22 @@ class Encryption:
     def XOR(self,data):
         "XOR text/file"
         key = self.__XOR_key_generator(self.length)
-        encoded_data = data if self.input_type == "file" else data.encode()+b'\x00'
+        encoded_data = data if self.input_type == "file" or self.input_type == "shellcode" else data.encode()+b'\x00'
         data_array = bytearray(encoded_data) #modifable when bytearray    
         for i in range(len(data_array)):
             current_key = key[i % len(key)]
             data_array[i] ^=  ord(current_key)
         
         encrypted = bytes(data_array)
-        key_var = "XORKey" if self.input_type == "file" else "k"+data[0].upper()+data[1:]
+        key_var = "XORKey" if self.input_type == "file" or self.input_type == "shellcode" else "k"+data[0].upper()+data[1:]
         key_value = "{" + ", ".join(hex(x) for x in (key.encode()+b"\x00")) + "}"   
         key_info = f"char {key_var}[] = {key_value};\n"
         if(self.input_type == "file"):
             return [encrypted,key_info]
-        else:
+        elif(self.input_type == "text" or self.input_type == "shellcode"):
             ciphertext_value = "{" + ", ".join(hex(x) for x in encrypted) + "}"
-            ciphertext_info = f"unsigned char s{data[0].upper()+data[1:]}[] = {ciphertext_value};\n"
+            varname = "Shellcode" if self.input_type == "shellcode" else data[0].upper()+data[1:]
+            ciphertext_info = f"unsigned char s{varname}[] = {ciphertext_value};\n"
             return [ciphertext_info, key_info]
         
     def AES(self, data):
@@ -46,21 +47,22 @@ class Encryption:
         aes_key = hashlib.sha256(key).digest()
   
         iv = b'\x00' * 16
-        encoded_data = data if self.input_type == "file" else data.encode()+b'\x00'
+        encoded_data = data if self.input_type == "file" or self.input_type == "shellcode" else data.encode()+b'\x00'
         padded_data = pad(encoded_data, AES.block_size)
         cipher = AES.new(aes_key, AES.MODE_CBC, iv)
 
-        key_var = "AESKey" if self.input_type == "file" else "k"+data[0].upper()+data[1:]
+        key_var = "AESKey" if self.input_type == "file" or self.input_type == "shellcode" else "k"+data[0].upper()+data[1:]
         key_info = f"char {key_var}[] ="+ "{ 0x" + ", 0x".join(hex(ord(chr(x)))[2:] for x in key) + "};\n"
         encrypted = cipher.encrypt(padded_data)
         if(self.input_type == "file"): return [encrypted,key_info]
-        else:
+        elif(self.input_type == "shellcode" or self.input_type == "text"):
             ciphertext_value = "{" + ", ".join(hex(x) for x in encrypted ) + "}"
-            ciphertext_info = f"unsigned char s{data[0].upper()+data[1:]}[] = {ciphertext_value};\n"
+            varname = "Shellcode" if self.input_type == "shellcode" else data[0].upper()+data[1:]
+            ciphertext_info = f"unsigned char s{varname}[] = {ciphertext_value};\n"
             return [ciphertext_info, key_info]
     def encrypt(self,data):
         if self.input_type != "file":
-            data_var = data[0].upper()+data[1:]
+            data_var =  "Shellcode" if self.input_type == "shellcode" else data[0].upper()+data[1:]
             decryption_function_call = f"(s{data_var}, sizeof(s{data_var}), k{data_var}, sizeof(k{data_var}));\n"
         if(enc_type == "aes"):
             result = self.AES(data)
@@ -71,7 +73,7 @@ class Encryption:
         return result
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--input-type", help="'text' or 'file'.",choices=['text','file'],required=True,dest="input_type")
+    parser.add_argument("-t", "--input-type", help="'text', 'file' or 'shellcode'.",choices=['text','file',"shellcode"],required=True,dest="input_type")
     parser.add_argument("-e","--encryption-type",help="'xor' or 'aes'.",dest="enc_type",required=True,choices=['xor','aes'])
     parser.add_argument("-i","--inputs",help="input filenames/texts separated by ','.",dest="inputs",required=True)
     parser.add_argument("-l","--key-length",help="XOR key length. default is '10'.",dest="key_length",default=10)
@@ -106,14 +108,14 @@ if __name__ == "__main__":
                 f.write("\n")
                 f.close()
 
-    elif(input_type =="file"):
+    elif(input_type =="file" or input_type == "shellcode"):
         for file in inputs.split(','):
             with open(file,"rb") as f:
                 result = encryption.encrypt(f.read())
                 print(f"file {file}.enc key:\n{result[1]}")
-                with open(file+".enc", "wb") as out_file:
+                mode = "wb" if input_type == "file" else "w"
+                with open(file+".enc", mode) as out_file:
                     out_file.write(result[0])
-                
 
             
 

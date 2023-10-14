@@ -1,13 +1,13 @@
 # String/File Encryptor
-This script has the ability to encrypt both text and file using AES and XOR.
+This script has the ability to encrypt both text, file and shellcode using AES and XOR.
 ## Usage
 ```
-strfile-encryptor.py [-h] -t {text,file} -e {xor,aes} -i INPUTS [-l KEY_LENGTH]
+strfile-encryptor.py [-h] -t {text,file,shellcode} -e {xor,aes} -i INPUTS [-l KEY_LENGTH]
 
 options:
   -h, --help            show this help message and exit
-  -t {text,file}, --input-type {text,file}
-                        'text' or 'file'.
+  -t {text,file,shellcode}, --input-type {text,file,shellcode}
+                        'text', 'file' or 'shellcode'.
   -e {xor,aes}, --encryption-type {xor,aes}
                         'xor' or 'aes'.
   -i INPUTS, --inputs INPUTS
@@ -15,6 +15,7 @@ options:
   -l KEY_LENGTH, --key-length KEY_LENGTH
                         XOR key length. default is '10'.
 ```
+**Note:** If `-t` is `shellcode` it must be in a file in raw format.
 ## Decryption functions
 <b>XOR</b>
 ```cpp
