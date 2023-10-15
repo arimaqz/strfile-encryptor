@@ -112,10 +112,14 @@ if __name__ == "__main__":
         for file in inputs.split(','):
             with open(file,"rb") as f:
                 result = encryption.encrypt(f.read())
-                print(f"file {file}.enc key:\n{result[1]}")
-                mode = "wb" if input_type == "file" else "w"
-                with open(file+".enc", mode) as out_file:
-                    out_file.write(result[0])
+                if(input_type == "file"):
+                    print(f"file {file}.enc key:\n{result[1]}")
+                    with open(file+".enc","wb") as out_file:
+                        out_file.write(result[0])
+                else:
+                    print(result[0])
+                    print(result[1])
+                    print("\n")
 
             
 
